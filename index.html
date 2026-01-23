@@ -38,7 +38,6 @@
         .game-height {
             height: 100dvh;
         }
-        /* Increased title font size scaling */
         .fluid-title { font-size: clamp(2.5rem, 12vh, 10rem); }
         .fluid-subtitle { font-size: clamp(1rem, 4vh, 3rem); }
     </style>
@@ -48,17 +47,19 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
-        const MAX_MISSES = 3;
+        const MAX_MISSES = 5; // Updated to 5 misses
         const LANE_COUNT = 3;
         const CAR_Y_POS = 82;
 
         const GOOD_HABITS_BANK = [
-            "Clean my room", "Be nice", "Shower everyday", "Sit upright", "Eat healthy", 
+            "Clean my room", "Be nice", "Sit upright", "Eat healthy", 
             "Brush teeth", "Share toys", "Say please", "Eat veggies", "Help Mom", 
-            "Do homework", "Be kind", "Listen well", "Help Dad", "Drink water", 
+            "Do homework", "Be kind", "Listen well", 
             "Read books", "Say thank you", "Wash hands", "Make bed", "Feed pets", 
             "Smile big", "Be brave", "Tell truth", "Recycle", "Plant trees",
-            "Donate toys", "Donate books", "Offer to help", "Clean up", "Volunteer"
+            "Donate toys", "Donate books", "Offer to help", "Clean up", "Volunteer",
+            "Be grateful", "Tell the Truth", "Care for animals", "Be patient", 
+            "Ask for help", "Use kind words", "Appreciate differences"
         ];
         
         const BAD_DEEDS_BANK = ["Be rude", "Eat anything", "Eat a lot", "Say bad words", "Dont help friends", "Talk to strangers", "Shouting", "Being mean", "Ignoring rules", "Wasting food", "Telling lies"];
@@ -401,7 +402,7 @@
                         <div className="absolute inset-0 bg-red-700/95 z-[200] flex flex-col items-center justify-center p-4 backdrop-blur-sm overflow-hidden px-safe">
                             <div className="bg-white p-6 sm:p-10 rounded-[3rem] shadow-2xl max-w-sm sm:max-w-xl md:max-w-2xl w-full h-[98dvh] flex flex-col items-center justify-between animate-pop border-b-8 border-red-200 py-10">
                                 <div className="flex flex-col items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 lg:w-24 lg:h-24 text-red-500 mb-4 animate-pulse">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-16 h-16 lg:w-24 lg:h-24 text-red-500 mb-4 animate-pulse">
                                         <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                                         <line x1="12" y1="9" x2="12" y2="13" />
                                         <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -424,6 +425,7 @@
                         </div>
                     )}
 
+                    {/* Gameplay Controls */}
                     {gameState === 'playing' && (
                         <div className="absolute inset-x-0 bottom-0 pb-safe z-50 flex justify-center gap-4 p-4 lg:p-12">
                             <button 
