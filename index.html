@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>The Kindness Cruiser</title>
+    <title>Kindness Drive</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -38,7 +38,8 @@
         .game-height {
             height: 100dvh;
         }
-        .fluid-title { font-size: clamp(2rem, 10vh, 8rem); }
+        /* Increased title font size scaling */
+        .fluid-title { font-size: clamp(2.5rem, 12vh, 10rem); }
         .fluid-subtitle { font-size: clamp(1rem, 4vh, 3rem); }
     </style>
 </head>
@@ -51,23 +52,28 @@
         const LANE_COUNT = 3;
         const CAR_Y_POS = 82;
 
-        const GOOD_HABITS_BANK = ["Clean my room", "Be nice", "Shower everyday", "Sit upright", "Eat healthy", "Brush teeth", "Share toys", "Say please", "Eat veggies", "Help Mom", "Do homework", "Be kind", "Listen well", "Help Dad", "Drink water", "Read books", "Say thank you", "Wash hands", "Make bed", "Feed pets", "Smile big", "Be brave", "Tell truth", "Recycle", "Plant trees"];
-        const BAD_DEEDS_BANK = ["Be rude", "Dont help mom", "Eat anything", "Eat a lot", "Say bad words", "Dont help friends", "Talk to strangers", "Littering", "Shouting", "Being mean", "Ignoring rules", "Wasting food", "Not sharing", "Telling lies"];
+        const GOOD_HABITS_BANK = [
+            "Clean my room", "Be nice", "Shower everyday", "Sit upright", "Eat healthy", 
+            "Brush teeth", "Share toys", "Say please", "Eat veggies", "Help Mom", 
+            "Do homework", "Be kind", "Listen well", "Help Dad", "Drink water", 
+            "Read books", "Say thank you", "Wash hands", "Make bed", "Feed pets", 
+            "Smile big", "Be brave", "Tell truth", "Recycle", "Plant trees",
+            "Donate toys", "Donate books", "Offer to help", "Clean up", "Volunteer"
+        ];
+        
+        const BAD_DEEDS_BANK = ["Be rude", "Eat anything", "Eat a lot", "Say bad words", "Dont help friends", "Talk to strangers", "Shouting", "Being mean", "Ignoring rules", "Wasting food", "Telling lies"];
 
         const BAD_DEEDS_ADVICE = {
             "Be rude": "Being rude hurts others' feelings. Always try to use your kindest words!",
-            "Dont help mom": "Helping mom shows her you care. We should always help our family at home!",
             "Eat anything": "Eating the wrong things can make you sick. Be careful and stay healthy!",
             "Eat a lot": "Eating too much can make your tummy hurt. Balance is very important!",
             "Say bad words": "Bad words aren't kind. Use your voice to spread happy and polite words!",
             "Dont help friends": "Helping friends makes you a great friend. Always be there for them!",
             "Talk to strangers": "It's safer to only talk to people you know and trust. Always stay near parents!",
-            "Littering": "Trash belongs in the bin to keep our world beautiful and healthy!",
             "Shouting": "Shouting can be loud and scary for others. Try using your polite inside voice!",
             "Being mean": "Being mean makes everyone sad. Kindness is a superpower that makes everyone smile!",
             "Ignoring rules": "Rules keep us safe and happy. Let's try our best to follow them!",
             "Wasting food": "Food is special. Only take what you need!",
-            "Not sharing": "Sharing makes playing with others much more fun. It shows that you care!",
             "Telling lies": "Telling the truth builds trust. It is always better to be honest!"
         };
 
@@ -195,8 +201,8 @@
                     if (isSpawningBad) {
                         if (badPool.current.length === 0) badPool.current = shuffle(BAD_DEEDS_BANK);
                         habit = badPool.current.pop();
-                        colorClass = 'bg-red-100';
-                        iconColor = 'text-red-500';
+                        colorClass = 'bg-red-600'; 
+                        iconColor = 'text-white';
                     } else {
                         if (goodPool.current.length === 0) goodPool.current = shuffle(GOOD_HABITS_BANK);
                         habit = goodPool.current.pop();
@@ -287,12 +293,11 @@
                 <div className={`relative w-full game-height overflow-hidden select-none touch-none flex justify-center transition-colors duration-700 ${gameState === 'playing' ? 'bg-blue-200' : 'bg-red-200'}`}>
                     <div className="absolute inset-y-0 left-0 w-4 sm:w-16 md:w-24 lg:w-48 bg-green-500 z-0"></div>
                     <div className="absolute inset-y-0 right-0 w-4 sm:w-16 md:w-24 lg:w-48 bg-green-500 z-0"></div>
-                    {/* WIDER ROAD: Increased max-widths for larger screens */}
                     <div className="relative w-full max-w-[92vw] sm:max-w-lg md:max-w-2xl lg:max-w-4xl h-full bg-gray-700 border-x-4 border-white z-0">
                         <div className="absolute inset-0 flex justify-between px-[33.33%] border-dashed border-white/30 border-r-4 border-l-4"></div>
                     </div>
 
-                    {/* GLOBAL FULL SCREEN TOGGLE - PERSISTENT Z-INDEX */}
+                    {/* GLOBAL FULL SCREEN TOGGLE */}
                     <div className="absolute top-0 right-0 p-4 sm:p-6 z-[300] pointer-events-auto px-safe pt-safe">
                         <button 
                             onClick={toggleFullScreen} 
@@ -326,9 +331,7 @@
                         </div>
                     </div>
 
-                    {/* Gameplay Elements */}
                     <div className="absolute inset-0 flex justify-center z-10 pointer-events-none">
-                        {/* WIDER ROAD OVERLAY: Matched max-widths */}
                         <div className="relative w-full max-w-[92vw] sm:max-w-lg md:max-w-2xl lg:max-w-4xl h-full">
                             {items.map(item => (
                                 <div key={item.id} className="absolute left-0 w-1/3 flex flex-col items-center" style={{ top: `${item.y}%`, left: `${item.lane * 33.33}%` }}>
@@ -346,7 +349,7 @@
                         </div>
                     </div>
 
-                    {/* Countdown Overlay */}
+                    {/* GO countdown */}
                     {gameState === 'countdown' && (
                         <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none">
                             <div key={count} className="animate-pop text-8xl sm:text-[12rem] lg:text-[16rem] font-black text-yellow-400 drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
@@ -370,7 +373,7 @@
                             <div className="bg-white p-4 sm:p-8 rounded-[2.5rem] shadow-2xl max-w-sm md:max-w-xl lg:max-w-3xl w-full h-[98dvh] flex flex-col items-center justify-between animate-pop border-b-8 border-gray-100 overflow-hidden py-10">
                                 <div className="flex-none text-center">
                                     <h1 className="fluid-title font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-pink-500 to-red-600 animate-title leading-tight">
-                                        KINDNESS<br/>CRUISER
+                                        KINDNESS<br/>DRIVE
                                     </h1>
                                 </div>
                                 <div className="flex-grow flex items-center justify-center min-h-0">
@@ -421,7 +424,6 @@
                         </div>
                     )}
 
-                    {/* Gameplay Controls */}
                     {gameState === 'playing' && (
                         <div className="absolute inset-x-0 bottom-0 pb-safe z-50 flex justify-center gap-4 p-4 lg:p-12">
                             <button 
