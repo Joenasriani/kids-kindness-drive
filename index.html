@@ -10,6 +10,9 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --game-unit: 1vmin;
+        }
         body {
             margin: 0;
             overflow: hidden;
@@ -35,11 +38,16 @@
         .animate-title {
             animation: titleBounce 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
         }
-        .game-height {
-            height: 100dvh;
+        .road-surface {
+            transform: rotateX(5deg);
+            transform-origin: top;
         }
-        .fluid-title { font-size: clamp(2.5rem, 12vh, 10rem); }
-        .fluid-subtitle { font-size: clamp(1rem, 4vh, 3rem); }
+        /* Proportional Scaling Utilities */
+        .text-fluid-title { font-size: calc(var(--game-unit) * 10); }
+        .text-fluid-subtitle { font-size: calc(var(--game-unit) * 4); }
+        .text-fluid-hud { font-size: calc(var(--game-unit) * 3.5); }
+        .text-fluid-label { font-size: calc(var(--game-unit) * 1.8); }
+        .text-fluid-item { font-size: calc(var(--game-unit) * 2.5); }
     </style>
 </head>
 <body>
@@ -47,7 +55,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
 
-        const MAX_MISSES = 5; // Updated to 5 misses
+        const MAX_MISSES = 5;
         const LANE_COUNT = 3;
         const CAR_Y_POS = 82;
 
@@ -117,16 +125,16 @@
             return a;
         };
 
-        const CarIcon = ({ sizeClass, rotated = false }) => (
-            <div className={`relative ${sizeClass} origin-center ${rotated ? 'rotate-180' : ''}`}>
-                <div className="w-full h-full bg-red-500 rounded-3xl shadow-2xl relative border-b-8 border-red-700 z-10 flex flex-col items-center justify-center overflow-hidden">
-                    <div className="w-[80%] h-[25%] bg-blue-300 rounded-lg mb-2 border-2 border-blue-400/50"></div>
-                    <div className="w-[40%] h-[12%] border-b-4 border-white rounded-full"></div>
+        const CarIcon = ({ style, rotated = false }) => (
+            <div style={style} className={`relative origin-center ${rotated ? 'rotate-180' : ''}`}>
+                <div className="w-full h-full bg-red-500 rounded-[20%] shadow-2xl relative border-b-[0.8vmin] border-red-700 z-10 flex flex-col items-center justify-center overflow-hidden">
+                    <div className="w-[80%] h-[25%] bg-blue-300 rounded-md mb-[5%] border-[0.2vmin] border-blue-400/50"></div>
+                    <div className="w-[40%] h-[12%] border-b-[0.4vmin] border-white rounded-full"></div>
                 </div>
-                <div className="absolute -left-[10%] top-[20%] w-[10%] h-[25%] bg-black rounded-l-lg"></div>
-                <div className="absolute -right-[10%] top-[20%] w-[10%] h-[25%] bg-black rounded-r-lg"></div>
-                <div className="absolute -left-[10%] bottom-[20%] w-[10%] h-[25%] bg-black rounded-l-lg"></div>
-                <div className="absolute -right-[10%] bottom-[20%] w-[10%] h-[25%] bg-black rounded-r-lg"></div>
+                <div className="absolute -left-[8%] top-[20%] w-[10%] h-[25%] bg-black rounded-l-lg"></div>
+                <div className="absolute -right-[8%] top-[20%] w-[10%] h-[25%] bg-black rounded-r-lg"></div>
+                <div className="absolute -left-[8%] bottom-[20%] w-[10%] h-[25%] bg-black rounded-l-lg"></div>
+                <div className="absolute -right-[8%] bottom-[20%] w-[10%] h-[25%] bg-black rounded-r-lg"></div>
                 <div className="absolute top-[5%] left-[10%] w-[15%] h-[10%] bg-yellow-200 rounded-full animate-pulse"></div>
                 <div className="absolute top-[5%] right-[10%] w-[15%] h-[10%] bg-yellow-200 rounded-full animate-pulse"></div>
             </div>
@@ -190,12 +198,12 @@
             const updateGame = useCallback((timestamp) => {
                 if (gameState !== 'playing') return;
 
-                const spawnRate = Math.max(1200, 3600 - (level * 250));
-                const isWayClear = !items.some(item => item.y < 45);
+                const spawnRate = Math.max(1000, 3200 - (level * 200));
+                const isWayClear = !items.some(item => item.y < 40);
 
                 if (timestamp - lastSpawnRef.current > spawnRate && isWayClear) {
                     const selectedLane = Math.floor(Math.random() * LANE_COUNT);
-                    const isSpawningBad = Math.random() < 0.3;
+                    const isSpawningBad = Math.random() < 0.35;
                     const iconChoice = ICON_POOL[Math.floor(Math.random() * ICON_POOL.length)];
                     
                     let habit, colorClass, iconColor;
@@ -232,13 +240,13 @@
                     const next = [];
                     let missedGoodCount = 0;
                     let hitBadDeed = false;
-                    const speed = 0.12 + (level * 0.08);
+                    const speed = 0.15 + (level * 0.1);
 
                     prev.forEach(item => {
                         const nextY = item.y + speed;
                         const isPortrait = window.innerHeight > window.innerWidth;
-                        const frontBumper = isPortrait ? (CAR_Y_POS - 14) : (CAR_Y_POS - 18);
-                        const hit = nextY > frontBumper && nextY < (CAR_Y_POS - 2) && item.lane === lane;
+                        const contactY = isPortrait ? 65 : 62; 
+                        const hit = nextY > contactY && nextY < (CAR_Y_POS + 5) && item.lane === lane;
 
                         if (hit) {
                             if (item.isBad) {
@@ -249,7 +257,7 @@
                                 setFeedback({ text: PRAISE_BANK[Math.floor(Math.random() * PRAISE_BANK.length)], color: 'bg-green-500' });
                                 setScore(s => {
                                     const ns = s + item.score;
-                                    if (Math.floor(ns / 150) > Math.floor(s / 150)) setLevel(l => Math.min(10, l + 1));
+                                    if (Math.floor(ns / 200) > Math.floor(s / 200)) setLevel(l => Math.min(15, l + 1));
                                     return ns;
                                 });
                             }
@@ -264,7 +272,7 @@
                         setMissed(m => {
                             const total = m + missedGoodCount;
                             if (total >= MAX_MISSES) {
-                                setFinalMessage("You missed too many good deeds! Try to catch them all next time.");
+                                setFinalMessage("You missed too many good deeds! Practice makes perfect!");
                                 setGameState('gameover');
                             }
                             return total;
@@ -291,78 +299,80 @@
             }, [feedback]);
 
             return (
-                <div className={`relative w-full game-height overflow-hidden select-none touch-none flex justify-center transition-colors duration-700 ${gameState === 'playing' ? 'bg-blue-200' : 'bg-red-200'}`}>
-                    <div className="absolute inset-y-0 left-0 w-4 sm:w-16 md:w-24 lg:w-48 bg-green-500 z-0"></div>
-                    <div className="absolute inset-y-0 right-0 w-4 sm:w-16 md:w-24 lg:w-48 bg-green-500 z-0"></div>
-                    <div className="relative w-full max-w-[92vw] sm:max-w-lg md:max-w-2xl lg:max-w-4xl h-full bg-gray-700 border-x-4 border-white z-0">
-                        <div className="absolute inset-0 flex justify-between px-[33.33%] border-dashed border-white/30 border-r-4 border-l-4"></div>
+                <div className={`relative w-full h-screen overflow-hidden select-none touch-none flex justify-center transition-colors duration-1000 ${gameState === 'playing' ? 'bg-blue-300' : 'bg-red-300'}`}>
+                    
+                    {/* Background elements */}
+                    <div className="absolute inset-0 flex justify-between bg-green-500">
+                        <div className="w-[10vw] h-full bg-green-600 opacity-30"></div>
+                        <div className="w-[10vw] h-full bg-green-600 opacity-30"></div>
                     </div>
 
-                    {/* GLOBAL FULL SCREEN TOGGLE */}
-                    <div className="absolute top-0 right-0 p-4 sm:p-6 z-[300] pointer-events-auto px-safe pt-safe">
-                        <button 
-                            onClick={toggleFullScreen} 
-                            className="bg-white/95 p-3 rounded-xl shadow-lg border-2 border-white text-gray-600 active:scale-90 transition-transform flex items-center justify-center hover:bg-gray-50"
-                            title="Toggle Full Screen"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-6 h-6">
+                    {/* Road Container */}
+                    <div className="relative w-full max-w-[95vw] md:max-w-[80vw] lg:max-w-[65vw] h-full bg-gray-700 border-x-[0.8vmin] border-white shadow-2xl overflow-hidden road-surface">
+                        <div className="absolute inset-0 flex justify-evenly pointer-events-none">
+                            <div className="h-full border-l-[0.4vmin] border-dashed border-white/30"></div>
+                            <div className="h-full border-l-[0.4vmin] border-dashed border-white/30"></div>
+                        </div>
+                    </div>
+
+                    {/* Persistent FS Toggle */}
+                    <div className="absolute top-0 right-0 p-[2vmin] z-[300] pointer-events-auto pt-safe px-safe">
+                        <button onClick={toggleFullScreen} className="bg-white/95 p-[1.5vmin] rounded-[2vmin] shadow-xl border-[0.3vmin] border-white text-gray-700 active:scale-90 transition-all flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-[4vmin] h-[4vmin]">
                                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
                             </svg>
                         </button>
                     </div>
 
-                    {/* HUD */}
-                    <div className="absolute top-0 left-0 right-0 p-4 sm:p-6 z-50 flex justify-between items-start pointer-events-none w-full max-w-5xl mx-auto px-safe">
-                        <div className="bg-white/95 p-2 px-4 rounded-2xl shadow-xl border-b-4 border-blue-400 text-center transform scale-90 sm:scale-100 lg:scale-110">
-                            <div className="text-[10px] uppercase font-bold tracking-tight text-gray-500">Score</div>
-                            <div className="text-xl sm:text-3xl font-black text-blue-600 leading-tight">{score}</div>
+                    {/* Proportional HUD */}
+                    <div className="absolute top-0 left-0 right-0 p-[2vmin] z-50 flex justify-between items-start pointer-events-none w-full max-w-[98vw] mx-auto pt-safe">
+                        <div className="bg-white/95 p-[1.2vmin] px-[2.5vmin] rounded-[2vmin] shadow-2xl border-b-[0.8vmin] border-blue-500 text-center min-w-[12vmin]">
+                            <div className="text-fluid-label uppercase font-black text-gray-400">Score</div>
+                            <div className="text-fluid-hud font-black text-blue-600 leading-tight">{score}</div>
                         </div>
 
-                        <div className="flex gap-2 bg-white/95 p-2 px-4 rounded-full shadow-lg border-2 border-white scale-90 sm:scale-100 lg:scale-110">
+                        <div className="flex gap-[0.5vmin] bg-white/95 p-[1vmin] px-[1.5vmin] rounded-full shadow-2xl border-[0.3vmin] border-white">
                             {[...Array(MAX_MISSES)].map((_, i) => (
-                                <Heart key={i} className={`w-6 h-6 md:w-8 md:h-8 ${i < (MAX_MISSES - missed) ? 'text-red-500' : 'text-gray-300'}`} />
+                                <Heart key={i} className={`w-[4vmin] h-[4vmin] ${i < (MAX_MISSES - missed) ? 'text-red-500' : 'text-gray-300'}`} />
                             ))}
                         </div>
 
-                        <div className="flex gap-2 items-start opacity-0 sm:opacity-100">
-                             <div className="bg-white/95 p-2 md:p-4 rounded-2xl shadow-xl border-b-4 border-red-300 min-w-[70px] 3xl:min-w-[150px] text-center pointer-events-none">
-                                <div className="text-[10px] 3xl:text-base text-gray-500 uppercase font-bold tracking-tight">Level</div>
-                                <div className="text-xl md:text-3xl 3xl:text-5xl text-red-600 font-black leading-tight">{level}</div>
-                            </div>
+                        <div className="bg-white/95 p-[1.2vmin] px-[2.5vmin] rounded-[2vmin] shadow-2xl border-b-[0.8vmin] border-yellow-500 text-center min-w-[12vmin] mr-[7vmin]">
+                            <div className="text-fluid-label uppercase font-black text-gray-400">Level</div>
+                            <div className="text-fluid-hud font-black text-yellow-600 leading-tight">{level}</div>
                         </div>
                     </div>
 
+                    {/* Game Content */}
                     <div className="absolute inset-0 flex justify-center z-10 pointer-events-none">
-                        <div className="relative w-full max-w-[92vw] sm:max-w-lg md:max-w-2xl lg:max-w-4xl h-full">
+                        <div className="relative w-full max-w-[95vw] md:max-w-[80vw] lg:max-w-[65vw] h-full">
                             {items.map(item => (
                                 <div key={item.id} className="absolute left-0 w-1/3 flex flex-col items-center" style={{ top: `${item.y}%`, left: `${item.lane * 33.33}%` }}>
-                                    <div className="bg-white/90 px-3 py-1 rounded-lg text-base sm:text-2xl lg:text-3xl font-black text-gray-800 shadow-md border border-blue-200 whitespace-nowrap mb-1">
+                                    <div className="bg-white/95 px-[1.5vmin] py-[0.5vmin] rounded-[1vmin] text-fluid-item font-black text-gray-800 shadow-xl border-[0.2vmin] border-blue-300 whitespace-nowrap mb-[1vmin] max-w-[90%] overflow-hidden">
                                         {item.text}
                                     </div>
-                                    <div className={`${item.color} p-2 rounded-full shadow-lg border-2 border-white w-10 h-10 sm:w-14 sm:h-14 lg:w-20 lg:h-20 flex items-center justify-center`}>
+                                    <div className={`${item.color} p-[1.2vmin] rounded-full shadow-2xl border-[0.5vmin] border-white w-[10vmin] h-[10vmin] flex items-center justify-center`}>
                                         <item.Icon className={`w-full h-full ${item.iconColor}`} />
                                     </div>
                                 </div>
                             ))}
-                            <div className="absolute transition-all duration-200 ease-out w-1/3 flex justify-center" style={{ left: `${lane * 33.33}%`, bottom: `${100 - CAR_Y_POS - 5}%` }}>
-                                <CarIcon sizeClass="w-16 h-24 sm:w-20 sm:h-32 lg:w-28 lg:h-44" />
-                            </div>
+                            <CarIcon 
+                                style={{ 
+                                    position: 'absolute', 
+                                    transition: 'all 0.15s ease-out', 
+                                    width: '12vmin', 
+                                    height: '18vmin', 
+                                    left: `calc(${lane * 33.33}% + 16.66% - 6vmin)`, 
+                                    bottom: `${100 - CAR_Y_POS - 5}%` 
+                                }} 
+                            />
                         </div>
                     </div>
 
-                    {/* GO countdown */}
-                    {gameState === 'countdown' && (
-                        <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none">
-                            <div key={count} className="animate-pop text-8xl sm:text-[12rem] lg:text-[16rem] font-black text-yellow-400 drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
-                                {count > 0 ? count : "GO!"}
-                            </div>
-                        </div>
-                    )}
-
                     {/* Feedback Popup */}
                     {feedback && (
-                        <div className="absolute top-1/4 z-[90] flex justify-center pointer-events-none animate-pop px-4 w-full">
-                            <div className={`${feedback.color || 'bg-green-500'} px-6 py-3 rounded-full text-xl sm:text-4xl lg:text-5xl font-black text-white shadow-2xl border-4 border-white whitespace-nowrap mx-auto`}>
+                        <div className="absolute top-[35%] z-[90] flex justify-center pointer-events-none animate-pop w-full px-4">
+                            <div className={`${feedback.color} px-[4vmin] py-[1.5vmin] rounded-full text-fluid-hud font-black text-white shadow-2xl border-[0.8vmin] border-white whitespace-nowrap`}>
                                 {feedback.text}
                             </div>
                         </div>
@@ -370,75 +380,69 @@
 
                     {/* START SCREEN */}
                     {gameState === 'start' && (
-                        <div className="absolute inset-0 bg-red-700/90 z-[200] flex flex-col items-center justify-center p-4 backdrop-blur-sm overflow-hidden">
-                            <div className="bg-white p-4 sm:p-8 rounded-[2.5rem] shadow-2xl max-w-sm md:max-w-xl lg:max-w-3xl w-full h-[98dvh] flex flex-col items-center justify-between animate-pop border-b-8 border-gray-100 overflow-hidden py-10">
-                                <div className="flex-none text-center">
-                                    <h1 className="fluid-title font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-pink-500 to-red-600 animate-title leading-tight">
-                                        KINDNESS<br/>DRIVE
-                                    </h1>
+                        <div className="absolute inset-0 bg-red-700/90 z-[200] flex items-center justify-center p-[2vmin] backdrop-blur-md">
+                            <div className="bg-white p-[4vmin] rounded-[4vmin] shadow-2xl max-w-[95vw] sm:max-w-[80vw] lg:max-w-[50vw] w-full h-[95dvh] flex flex-col items-center justify-evenly animate-pop border-b-[1.5vmin] border-gray-200 overflow-hidden">
+                                <h1 className="text-fluid-title font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-pink-500 to-red-600 animate-title leading-none text-center">
+                                    KINDNESS<br/>DRIVE
+                                </h1>
+                                <div className="flex-1 flex items-center justify-center min-h-0 py-[2vmin]">
+                                    <CarIcon style={{ height: '35vmin', aspectRatio: '2/3' }} />
                                 </div>
-                                <div className="flex-grow flex items-center justify-center min-h-0">
-                                    <CarIcon sizeClass="h-[15vh] sm:h-[20vh] lg:h-[25vh] aspect-[2/3] drop-shadow-xl" />
-                                </div>
-                                <div className="flex-none text-center px-4">
-                                    <p className="fluid-subtitle font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-pink-500 to-red-500 animate-pulse tracking-wide leading-snug">
-                                        Catch good habits!<br/>Avoid bad habits!
-                                    </p>
-                                </div>
-                                <div className="flex-none w-full flex justify-center pt-4">
-                                    <button 
-                                      onClick={() => setGameState('countdown')} 
-                                      className="w-full max-w-[280px] md:max-w-md bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white text-2xl sm:text-4xl lg:text-5xl font-black py-4 lg:py-6 rounded-[2rem] shadow-xl border-b-8 border-red-800 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-4"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 lg:w-12 lg:h-12"><polygon points="5 3 19 12 5 21 5 3" /></svg> START
-                                    </button>
-                                </div>
+                                <p className="text-fluid-subtitle font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-pink-500 to-red-500 animate-pulse tracking-tight leading-tight text-center px-[2vmin]">
+                                    Drive Kindness!<br/>Avoid Bad Deeds!
+                                </p>
+                                <button 
+                                  onClick={() => setGameState('countdown')} 
+                                  className="w-[80%] max-w-[40vmin] bg-gradient-to-r from-red-500 to-pink-600 text-white text-fluid-hud font-black py-[2.5vmin] rounded-[3vmin] shadow-2xl border-b-[1vmin] border-red-800 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-[2vmin]"
+                                >
+                                    START
+                                </button>
                             </div>
                         </div>
                     )}
 
                     {/* GAME OVER SCREEN */}
                     {gameState === 'gameover' && (
-                        <div className="absolute inset-0 bg-red-700/95 z-[200] flex flex-col items-center justify-center p-4 backdrop-blur-sm overflow-hidden px-safe">
-                            <div className="bg-white p-6 sm:p-10 rounded-[3rem] shadow-2xl max-w-sm sm:max-w-xl md:max-w-2xl w-full h-[98dvh] flex flex-col items-center justify-between animate-pop border-b-8 border-red-200 py-10">
+                        <div className="absolute inset-0 bg-red-700/95 z-[200] flex items-center justify-center p-[2vmin] backdrop-blur-xl">
+                            <div className="bg-white p-[5vmin] rounded-[4vmin] shadow-2xl max-w-[95vw] sm:max-w-[80vw] lg:max-w-[50vw] w-full h-[95dvh] flex flex-col items-center justify-evenly animate-pop border-b-[1.5vmin] border-red-200">
                                 <div className="flex flex-col items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-16 h-16 lg:w-24 lg:h-24 text-red-500 mb-4 animate-pulse">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-[12vmin] h-[12vmin] text-red-500 mb-[2vmin] animate-pulse">
                                         <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                                         <line x1="12" y1="9" x2="12" y2="13" />
                                         <line x1="12" y1="17" x2="12.01" y2="17" />
                                     </svg>
-                                    <h2 className="text-xl sm:text-3xl lg:text-5xl font-black text-gray-800 leading-relaxed text-center px-4">
+                                    <h2 className="text-fluid-subtitle font-black text-gray-800 leading-tight text-center px-[2vmin]">
                                         {finalMessage}
                                     </h2>
                                 </div>
-                                <div className="bg-red-50 p-6 rounded-[2rem] w-full max-w-xs sm:max-w-md text-center">
-                                    <div className="text-[10px] uppercase font-bold text-gray-400 mb-2 tracking-widest">Final Score</div>
-                                    <div className="text-6xl sm:text-8xl font-black text-red-600">{score}</div>
+                                <div className="bg-red-50 p-[3vmin] rounded-[3vmin] w-full text-center shadow-inner">
+                                    <div className="text-fluid-label uppercase font-black text-gray-400 mb-[1vmin] tracking-widest">Final Score</div>
+                                    <div className="text-[12vmin] font-black text-red-600 leading-none">{score}</div>
                                 </div>
                                 <button 
                                     onClick={() => setGameState('start')} 
-                                    className="w-full max-w-md bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white text-xl md:text-3xl lg:text-4xl font-black py-4 lg:py-6 rounded-[2rem] shadow-xl border-b-8 border-red-800 active:translate-y-1 transition-all flex items-center justify-center gap-4"
+                                    className="w-[80%] max-w-[40vmin] bg-gradient-to-r from-red-500 to-pink-600 text-white text-fluid-hud font-black py-[2.5vmin] rounded-[3vmin] shadow-2xl border-b-[1vmin] border-red-800 active:translate-y-1 transition-all"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-8 h-8"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg> PLAY AGAIN
+                                    PLAY AGAIN
                                 </button>
                             </div>
                         </div>
                     )}
 
-                    {/* Gameplay Controls */}
+                    {/* Controls */}
                     {gameState === 'playing' && (
-                        <div className="absolute inset-x-0 bottom-0 pb-safe z-50 flex justify-center gap-4 p-4 lg:p-12">
+                        <div className="absolute inset-x-0 bottom-0 pb-safe z-50 flex justify-between gap-[5vmin] p-[3vmin] lg:p-[4vmin]">
                             <button 
                                 onPointerDown={(e) => { e.preventDefault(); setLane(l => Math.max(0, l - 1)); }}
-                                className="flex-1 max-w-[150px] sm:max-w-[200px] lg:max-w-[300px] h-20 sm:h-24 lg:h-36 bg-white/20 backdrop-blur-md rounded-3xl border-2 border-white/50 shadow-lg active:bg-white/40 active:scale-95 transition-all flex items-center justify-center"
+                                className="flex-1 max-w-[25vw] h-[15vmin] bg-white/20 backdrop-blur-lg rounded-[3vmin] border-[0.4vmin] border-white/50 shadow-2xl active:bg-white/40 active:scale-95 transition-all flex items-center justify-center"
                             >
-                                <div className="w-0 h-0 border-y-[12px] md:border-y-[20px] lg:border-y-[30px] border-r-[25px] sm:border-r-[35px] lg:border-r-[50px] border-y-transparent border-r-white"></div>
+                                <div className="w-0 h-0 border-y-[4vmin] border-r-[6vmin] border-y-transparent border-r-white"></div>
                             </button>
                             <button 
                                 onPointerDown={(e) => { e.preventDefault(); setLane(l => Math.min(2, l + 1)); }}
-                                className="flex-1 max-w-[150px] sm:max-w-[200px] lg:max-w-[300px] h-20 sm:h-24 lg:h-36 bg-white/20 backdrop-blur-md rounded-3xl border-2 border-white/50 shadow-lg active:bg-white/40 active:scale-95 transition-all flex items-center justify-center"
+                                className="flex-1 max-w-[25vw] h-[15vmin] bg-white/20 backdrop-blur-lg rounded-[3vmin] border-[0.4vmin] border-white/50 shadow-2xl active:bg-white/40 active:scale-95 transition-all flex items-center justify-center"
                             >
-                                <div className="w-0 h-0 border-y-[12px] md:border-y-[20px] lg:border-y-[30px] border-l-[25px] sm:border-l-[35px] lg:border-l-[50px] border-y-transparent border-l-white"></div>
+                                <div className="w-0 h-0 border-y-[4vmin] border-l-[6vmin] border-y-transparent border-l-white"></div>
                             </button>
                         </div>
                     )}
@@ -451,3 +455,4 @@
     </script>
 </body>
 </html>
+
