@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
     <style>
         :root {
-            --gu: 1vmin; /* Base Game Unit */
+            --gu: 1vmin;
         }
         body {
             margin: 0;
@@ -29,6 +29,14 @@
         .animate-pop {
             animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
+        @keyframes racingCountdown {
+            0% { transform: scale(0); opacity: 0; }
+            40% { transform: scale(1.4); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-countdown {
+            animation: racingCountdown 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
         @keyframes titleBounce {
             0% { transform: scale(0) rotate(-10deg); opacity: 0; }
             50% { transform: scale(1.1) rotate(5deg); }
@@ -42,12 +50,11 @@
             transform: rotateX(5deg);
             transform-origin: top;
         }
-        /* Proportional Scaling Typography */
         .text-fluid-title { font-size: calc(var(--gu) * 9.5); }
         .text-fluid-subtitle { font-size: calc(var(--gu) * 3.8); }
         .text-fluid-hud { font-size: calc(var(--gu) * 3.5); }
         .text-fluid-label { font-size: calc(var(--gu) * 1.6); }
-        .text-fluid-item { font-size: calc(var(--gu) * 2.2); }
+        .text-fluid-item { font-size: calc(var(--gu) * 3.2); }
     </style>
 </head>
 <body>
@@ -58,11 +65,12 @@
         const MAX_MISSES = 5;
         const LANE_COUNT = 3;
         const CAR_Y_POS = 82;
-        const IDLE_TIMEOUT_MS = 180000;
+        const IDLE_TIMEOUT_MS = 180000; // 3 minutes
+        const LEVEL_DURATION_MS = 20000; // 20 seconds per level
 
         const GOOD_HABITS_BANK = [
             "Clean my room", "Be nice", "Sit upright", "Eat healthy", 
-            "Brush teeth", "Share toys", "Say please", "Eat veggies", "Help Mom", 
+            "Brush teeth", "Share toys", "Say please", "Eat veggies", 
             "Do homework", "Be kind", "Listen well", "Read books", "Say thank you", 
             "Wash hands", "Make bed", "Feed pets", "Smile big", "Be brave", "Tell truth", 
             "Recycle", "Plant trees", "Donate toys", "Donate books", "Offer to help", 
@@ -157,19 +165,8 @@
             const badPool = useRef([]);
             const gameLoopRef = useRef();
             const lastSpawnRef = useRef(0);
+            const lastLevelUpRef = useRef(0);
             const idleTimerRef = useRef(null);
-
-            const resetGame = useCallback(() => {
-                setScore(0);
-                setMissed(0);
-                setLevel(1);
-                setItems([]);
-                setLane(1);
-                setCount(3);
-                goodPool.current = shuffle(GOOD_HABITS_BANK);
-                badPool.current = shuffle(BAD_DEEDS_BANK);
-                setGameState('countdown');
-            }, []);
 
             const toggleFullScreen = useCallback(() => {
                 if (!document.fullscreenElement) {
@@ -181,7 +178,7 @@
 
             const resetIdleTimer = useCallback(() => {
                 if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-                if (gameState === 'playing' || gameState === 'gameover') {
+                if (gameState === 'playing' || gameState === 'gameover' || gameState === 'countdown') {
                     idleTimerRef.current = setTimeout(() => {
                         setGameState('start');
                     }, IDLE_TIMEOUT_MS);
@@ -204,22 +201,51 @@
                 return () => document.removeEventListener('fullscreenchange', handleFsChange);
             }, []);
 
+            const resetGame = useCallback(() => {
+                setScore(0);
+                setMissed(0);
+                setLevel(1);
+                setItems([]);
+                setLane(1);
+                setCount(3);
+                goodPool.current = shuffle(GOOD_HABITS_BANK);
+                badPool.current = shuffle(BAD_DEEDS_BANK);
+                setGameState('countdown');
+            }, []);
+
             useEffect(() => {
                 if (gameState === 'countdown') {
                     if (count > 0) {
                         const t = setTimeout(() => setCount(c => c - 1), 1000);
                         return () => clearTimeout(t);
                     } else {
-                        const t = setTimeout(() => setGameState('playing'), 1000);
+                        const t = setTimeout(() => {
+                            setGameState('playing');
+                            lastLevelUpRef.current = performance.now();
+                        }, 1000);
                         return () => clearTimeout(t);
                     }
                 }
             }, [gameState, count]);
 
+            const triggerFeedback = (text, colorClass) => {
+                setFeedback({ text, color: colorClass });
+                setTimeout(() => setFeedback(null), 1000);
+            };
+
             const updateGame = useCallback((timestamp) => {
                 if (gameState !== 'playing') return;
 
-                const spawnRate = Math.max(1000, 3000 - (level * 200));
+                if (timestamp - lastLevelUpRef.current > LEVEL_DURATION_MS) {
+                    setLevel(l => {
+                        const nextLevel = l + 1;
+                        triggerFeedback(`LEVEL ${nextLevel}!`, 'bg-yellow-500');
+                        return nextLevel;
+                    });
+                    lastLevelUpRef.current = timestamp;
+                }
+
+                const spawnRate = Math.max(800, 3200 - (level * 200));
                 const isWayClear = !items.some(item => item.y < 35);
 
                 if (timestamp - lastSpawnRef.current > spawnRate && isWayClear) {
@@ -259,7 +285,7 @@
                     const next = [];
                     let missedGoodCount = 0;
                     let hitBadDeed = false;
-                    const speed = 0.15 + (level * 0.1);
+                    const speed = level === 1 ? 0.18 : 0.12 + (level * 0.08);
 
                     prev.forEach(item => {
                         const nextY = item.y + speed;
@@ -272,12 +298,8 @@
                                 setFinalMessage(BAD_DEEDS_ADVICE[item.text] || "Always stay away from bad deeds!");
                                 setGameState('gameover');
                             } else {
-                                setFeedback({ text: PRAISE_BANK[Math.floor(Math.random() * PRAISE_BANK.length)], color: 'bg-green-500' });
-                                setScore(s => {
-                                    const ns = s + item.score;
-                                    if (Math.floor(ns / 200) > Math.floor(s / 200)) setLevel(l => Math.min(15, l + 1));
-                                    return ns;
-                                });
+                                triggerFeedback(PRAISE_BANK[Math.floor(Math.random() * PRAISE_BANK.length)], 'bg-green-500');
+                                setScore(s => s + item.score);
                             }
                         } else if (nextY > 105) {
                             if (!item.isBad) missedGoodCount++;
@@ -303,34 +325,23 @@
 
             useEffect(() => {
                 if (gameState === 'playing') {
-                    lastSpawnRef.current = 0;
                     gameLoopRef.current = requestAnimationFrame(updateGame);
                 }
                 return () => cancelAnimationFrame(gameLoopRef.current);
             }, [gameState, updateGame]);
 
-            useEffect(() => {
-                if (feedback) {
-                    const t = setTimeout(() => setFeedback(null), 1000);
-                    return () => clearTimeout(t);
-                }
-            }, [feedback]);
-
             return (
                 <div className={`relative w-full h-screen overflow-hidden select-none touch-none flex flex-col items-center transition-colors duration-1000 ${gameState === 'playing' ? 'bg-blue-300' : 'bg-red-300'}`}>
-                    
                     <div className="absolute inset-0 flex justify-between bg-green-500">
                         <div className="w-[10vw] h-full bg-green-600 opacity-20"></div>
                         <div className="w-[10vw] h-full bg-green-600 opacity-20"></div>
                     </div>
-
                     <div className="relative w-full max-w-[95vw] md:max-w-[75vw] lg:max-w-[60vw] h-full bg-gray-700 border-x-[0.6vmin] border-white shadow-2xl overflow-hidden road-surface">
                         <div className="absolute inset-0 flex justify-evenly pointer-events-none">
                             <div className="h-full border-l-[0.3vmin] border-dashed border-white/20"></div>
                             <div className="h-full border-l-[0.3vmin] border-dashed border-white/20"></div>
                         </div>
                     </div>
-
                     <div className="absolute top-0 right-0 p-[1.5vmin] z-[300] pointer-events-auto pt-safe px-safe">
                         <button onClick={toggleFullScreen} className="bg-white/90 p-[1.2vmin] rounded-[1.5vmin] shadow-xl border-[0.2vmin] border-white text-gray-700 active:scale-90 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-[3.5vmin] h-[3.5vmin]">
@@ -338,31 +349,26 @@
                             </svg>
                         </button>
                     </div>
-
-                    {/* Proportional Spaced HUD */}
                     <div className="absolute top-0 left-0 right-0 p-[2vmin] z-50 flex justify-between items-start pointer-events-none w-full max-w-[98vw] mx-auto pt-safe">
-                        <div className="bg-white/95 p-[1.2vmin] px-[2.5vmin] rounded-[1.5vmin] shadow-xl border-b-[0.6vmin] border-blue-500 text-center min-w-[12vmin]">
+                        <div className="bg-white/95 p-[1.2vmin] px-[2.5vmin] rounded-[1.5vmin] shadow-xl border-b-[0.6vmin] border-red-500 text-center min-w-[12vmin]">
                             <div className="text-fluid-label uppercase font-black text-gray-400">Score</div>
-                            <div className="text-fluid-hud font-black text-blue-600 leading-tight">{score}</div>
+                            <div className="text-fluid-hud font-black text-red-600 leading-tight">{score}</div>
                         </div>
-
                         <div className="flex gap-[0.5vmin] bg-white/95 p-[1vmin] px-[1.5vmin] rounded-full shadow-xl border-[0.2vmin] border-white">
                             {[...Array(MAX_MISSES)].map((_, i) => (
                                 <Heart key={i} className={`w-[4vmin] h-[4vmin] ${i < (MAX_MISSES - missed) ? 'text-red-500' : 'text-gray-300'}`} />
                             ))}
                         </div>
-
                         <div className="bg-white/95 p-[1.2vmin] px-[2.5vmin] rounded-[1.5vmin] shadow-xl border-b-[0.6vmin] border-yellow-500 text-center min-w-[12vmin] mr-[7vmin]">
                             <div className="text-fluid-label uppercase font-black text-gray-400">Level</div>
                             <div className="text-fluid-hud font-black text-yellow-600 leading-tight">{level}</div>
                         </div>
                     </div>
-
                     <div className="absolute inset-0 flex justify-center z-10 pointer-events-none">
-                        <div className="relative w-full max-w-[95vw] md:max-w-[75vw] lg:max-w-[60vw] h-full">
+                        <div className="relative w-full max-w-[95vw] md:max-w-[75vw] lg:max-w-[60vw] h-full overflow-visible">
                             {items.map(item => (
                                 <div key={item.id} className="absolute left-0 w-1/3 flex flex-col items-center" style={{ top: `${item.y}%`, left: `${item.lane * 33.33}%` }}>
-                                    <div className="bg-white/95 px-[1.5vmin] py-[0.5vmin] rounded-[0.8vmin] text-fluid-item font-black text-gray-800 shadow-xl border-[0.15vmin] border-blue-300 whitespace-nowrap mb-[0.8vmin] max-w-[90%] overflow-hidden">
+                                    <div className="bg-white/95 px-[1.8vmin] py-[0.6vmin] rounded-[1vmin] text-fluid-item font-black text-gray-800 shadow-xl border-[0.15vmin] border-blue-300 whitespace-nowrap mb-[0.8vmin] flex items-center justify-center min-w-max">
                                         {item.text}
                                     </div>
                                     <div className={`${item.color} p-[1.2vmin] rounded-full shadow-xl border-[0.4vmin] border-white w-[10vmin] h-[10vmin] flex items-center justify-center`}>
@@ -375,43 +381,49 @@
                             </div>
                         </div>
                     </div>
-
-                    {/* Start Screen - Rigid Flex Distribution to prevent overlap */}
+                    {gameState === 'countdown' && (
+                        <div className="absolute inset-0 z-[400] flex items-center justify-center pointer-events-none bg-black/30 backdrop-blur-sm">
+                            <div key={count} className="animate-countdown flex flex-col items-center">
+                                <div className={`text-[25vh] font-black drop-shadow-[0_1vmin_1vmin_rgba(0,0,0,0.5)] ${count > 0 ? 'text-yellow-400' : 'text-green-500'}`}>
+                                    {count > 0 ? count : "GO!"}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     {gameState === 'start' && (
                         <div className="absolute inset-0 bg-red-700/90 z-[200] flex items-center justify-center p-[2vmin] backdrop-blur-md">
                             <div className="bg-white px-[4vmin] py-[6vh] rounded-[4vmin] shadow-2xl max-w-[95vw] sm:max-w-[85vw] lg:max-w-[50vw] w-full h-[95dvh] flex flex-col items-center justify-between animate-pop border-b-[1vmin] border-gray-200 overflow-hidden">
-                                
                                 <h1 className="text-fluid-title font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-pink-500 to-red-600 animate-title leading-none text-center">
                                     KINDNESS<br/>DRIVE
                                 </h1>
-                                
                                 <div className="flex-grow flex items-center justify-center min-h-0 py-[2vh]">
                                     <CarIcon style={{ height: '25vmin', aspectRatio: '2/3' }} />
                                 </div>
-                                
                                 <div className="py-[3vh] flex flex-col items-center justify-center">
                                     <p className="text-fluid-subtitle font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-pink-500 to-red-500 animate-pulse tracking-tight leading-tight text-center px-[2vmin]">
                                         COLLECT GOOD DEEDS!<br/>AVOID BAD DEEDS!
                                     </p>
                                 </div>
-                                
                                 <div className="w-full flex justify-center mt-auto pb-[2vh]">
-                                    <button 
-                                      onClick={() => setGameState('countdown')} 
-                                      className="w-[85%] max-w-[40vmin] bg-gradient-to-r from-red-500 to-pink-600 text-white text-fluid-hud font-black py-[2.5vmin] rounded-[3vmin] shadow-2xl border-b-[1vmin] border-red-800 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-[2vmin]"
-                                    >
+                                    <button onClick={resetGame} className="w-[85%] max-w-[40vmin] bg-gradient-to-r from-red-500 to-pink-600 text-white text-fluid-hud font-black py-[2.5vmin] rounded-[3vmin] shadow-2xl border-b-[1vmin] border-red-800 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-[2vmin]">
                                         START
                                     </button>
                                 </div>
                             </div>
                         </div>
                     )}
-
+                    {feedback && (
+                        <div className="absolute top-[35%] z-[90] flex justify-center pointer-events-none animate-pop w-full px-4">
+                            <div className={`${feedback.color} px-[3vmin] py-[1vmin] rounded-full text-fluid-hud font-black text-white shadow-2xl border-[0.6vmin] border-white whitespace-nowrap`}>
+                                {feedback.text}
+                            </div>
+                        </div>
+                    )}
                     {gameState === 'gameover' && (
                         <div className="absolute inset-0 bg-red-700/95 z-[200] flex items-center justify-center p-[2vmin] backdrop-blur-xl">
-                            <div className="bg-white p-[5vmin] rounded-[4vmin] shadow-2xl max-w-[95vw] sm:max-w-[85vw] lg:max-w-[50vw] w-full h-[95dvh] flex flex-col items-center justify-evenly animate-pop border-b-[1vmin] border-red-200">
+                            <div className="bg-white p-[4vmin] rounded-[4vmin] shadow-2xl max-w-[95vw] sm:max-w-[85vw] lg:max-w-[50vw] w-full h-[95dvh] flex flex-col items-center justify-evenly animate-pop border-b-[1vmin] border-red-200">
                                 <div className="flex flex-col items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-[12vmin] h-[12vmin] text-red-500 mb-[2vmin] animate-pulse">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-[10vmin] h-[10vmin] text-red-500 mb-[1.5vmin] animate-pulse">
                                         <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                                         <line x1="12" y1="9" x2="12" y2="13" />
                                         <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -420,32 +432,22 @@
                                         {finalMessage}
                                     </h2>
                                 </div>
-                                <div className="bg-red-50 p-[3vmin] rounded-[3vmin] w-full text-center shadow-inner">
-                                    <div className="text-fluid-label uppercase font-black text-gray-400 mb-[1vmin] tracking-widest">Final Score</div>
-                                    <div className="text-[15vmin] font-black text-red-600 leading-none">{score}</div>
+                                <div className="bg-red-50 p-[2.5vmin] rounded-[2.5vmin] w-full text-center shadow-inner">
+                                    <div className="text-fluid-label uppercase font-black text-gray-400 mb-[0.8vmin] tracking-widest">Final Score</div>
+                                    <div className="text-[10vmin] font-black text-red-600 leading-none">{score}</div>
                                 </div>
-                                <button 
-                                    onClick={() => setGameState('start')} 
-                                    className="w-[85%] max-w-[40vmin] bg-gradient-to-r from-red-500 to-pink-600 text-white text-fluid-hud font-black py-[2.5vmin] rounded-[3vmin] shadow-2xl border-b-[1vmin] border-red-800 active:translate-y-1 transition-all"
-                                >
+                                <button onClick={() => setGameState('start')} className="w-[85%] max-w-[35vmin] bg-gradient-to-r from-red-500 to-pink-600 text-white text-fluid-hud font-black py-[2vmin] rounded-[2.5vmin] shadow-2xl border-b-[0.8vmin] border-red-800 active:translate-y-1 transition-all">
                                     PLAY AGAIN
                                 </button>
                             </div>
                         </div>
                     )}
-
                     {gameState === 'playing' && (
                         <div className="absolute inset-x-0 bottom-0 pb-safe z-50 flex justify-between gap-[5vmin] p-[3vmin] lg:p-[5vmin]">
-                            <button 
-                                onPointerDown={(e) => { e.preventDefault(); setLane(l => Math.max(0, l - 1)); }}
-                                className="flex-1 max-w-[25vw] h-[16vmin] bg-white/10 backdrop-blur-md rounded-[3vmin] border-[0.4vmin] border-white/40 shadow-2xl active:bg-white/30 active:scale-95 transition-all flex items-center justify-center"
-                            >
+                            <button onPointerDown={(e) => { e.preventDefault(); setLane(l => Math.max(0, l - 1)); }} className="flex-1 max-w-[25vw] h-[16vmin] bg-white/10 backdrop-blur-md rounded-[3vmin] border-[0.4vmin] border-white/40 shadow-2xl active:bg-white/30 active:scale-95 transition-all flex items-center justify-center">
                                 <div className="w-0 h-0 border-y-[4.5vmin] border-r-[6.5vmin] border-y-transparent border-r-white"></div>
                             </button>
-                            <button 
-                                onPointerDown={(e) => { e.preventDefault(); setLane(l => Math.min(2, l + 1)); }}
-                                className="flex-1 max-w-[25vw] h-[16vmin] bg-white/10 backdrop-blur-md rounded-[3vmin] border-[0.4vmin] border-white/40 shadow-2xl active:bg-white/30 active:scale-95 transition-all flex items-center justify-center"
-                            >
+                            <button onPointerDown={(e) => { e.preventDefault(); setLane(l => Math.min(2, l + 1)); }} className="flex-1 max-w-[25vw] h-[16vmin] bg-white/10 backdrop-blur-md rounded-[3vmin] border-[0.4vmin] border-white/40 shadow-2xl active:bg-white/30 active:scale-95 transition-all flex items-center justify-center">
                                 <div className="w-0 h-0 border-y-[4.5vmin] border-l-[6.5vmin] border-y-transparent border-l-white"></div>
                             </button>
                         </div>
