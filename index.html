@@ -65,8 +65,8 @@
         const MAX_MISSES = 5;
         const LANE_COUNT = 3;
         const CAR_Y_POS = 82;
-        const IDLE_TIMEOUT_MS = 180000; // 3 minutes
-        const LEVEL_DURATION_MS = 20000; // 20 seconds per level
+        const IDLE_TIMEOUT_MS = 180000; 
+        const LEVEL_DURATION_MS = 20000; 
 
         const GOOD_HABITS_BANK = [
             "Clean my room", "Be nice", "Sit upright", "Eat healthy", 
@@ -78,9 +78,9 @@
             "Be patient", "Ask for help", "Use kind words", "Appreciate differences"
         ];
         
-        const BAD_DEEDS_BANK = ["Be rude", "Eat anything", "Eat a lot", "Say bad words", "Dont help friends", "Talk to strangers", "Shouting", "Being mean", "Ignoring rules", "Wasting food", "Telling lies"];
+        const BAD_HABITS_BANK = ["Be rude", "Eat anything", "Eat a lot", "Say bad words", "Dont help friends", "Talk to strangers", "Shouting", "Being mean", "Ignoring rules", "Wasting food", "Telling lies"];
 
-        const BAD_DEEDS_ADVICE = {
+        const BAD_HABITS_ADVICE = {
             "Be rude": "Being rude hurts others' feelings. Always try to use your kindest words!",
             "Eat anything": "Eating the wrong things can make you sick. Be careful and stay healthy!",
             "Eat a lot": "Eating too much can make your tummy hurt. Balance is very important!",
@@ -209,7 +209,7 @@
                 setLane(1);
                 setCount(3);
                 goodPool.current = shuffle(GOOD_HABITS_BANK);
-                badPool.current = shuffle(BAD_DEEDS_BANK);
+                badPool.current = shuffle(BAD_HABITS_BANK);
                 setGameState('countdown');
             }, []);
 
@@ -255,7 +255,7 @@
                     
                     let habit, colorClass, iconColor;
                     if (isSpawningBad) {
-                        if (badPool.current.length === 0) badPool.current = shuffle(BAD_DEEDS_BANK);
+                        if (badPool.current.length === 0) badPool.current = shuffle(BAD_HABITS_BANK);
                         habit = badPool.current.pop();
                         colorClass = 'bg-red-600'; 
                         iconColor = 'text-white';
@@ -284,7 +284,7 @@
                 setItems(prev => {
                     const next = [];
                     let missedGoodCount = 0;
-                    let hitBadDeed = false;
+                    let hitBadHabit = false;
                     const speed = level === 1 ? 0.18 : 0.12 + (level * 0.08);
 
                     prev.forEach(item => {
@@ -294,8 +294,8 @@
 
                         if (hit) {
                             if (item.isBad) {
-                                hitBadDeed = true;
-                                setFinalMessage(BAD_DEEDS_ADVICE[item.text] || "Always stay away from bad deeds!");
+                                hitBadHabit = true;
+                                setFinalMessage(BAD_HABITS_ADVICE[item.text] || "Always stay away from bad habits!");
                                 setGameState('gameover');
                             } else {
                                 triggerFeedback(PRAISE_BANK[Math.floor(Math.random() * PRAISE_BANK.length)], 'bg-green-500');
@@ -308,11 +308,11 @@
                         }
                     });
 
-                    if (!hitBadDeed && missedGoodCount > 0) {
+                    if (!hitBadHabit && missedGoodCount > 0) {
                         setMissed(m => {
                             const total = m + missedGoodCount;
                             if (total >= MAX_MISSES) {
-                                setFinalMessage("You missed too many good deeds! Keep trying!");
+                                setFinalMessage("You missed too many good habits! Keep trying!");
                                 setGameState('gameover');
                             }
                             return total;
@@ -401,7 +401,7 @@
                                 </div>
                                 <div className="py-[3vh] flex flex-col items-center justify-center">
                                     <p className="text-fluid-subtitle font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-pink-500 to-red-500 animate-pulse tracking-tight leading-tight text-center px-[2vmin]">
-                                        COLLECT GOOD DEEDS!<br/>AVOID BAD DEEDS!
+                                        COLLECT GOOD HABITS!<br/>AVOID BAD HABITS!
                                     </p>
                                 </div>
                                 <div className="w-full flex justify-center mt-auto pb-[2vh]">
@@ -461,3 +461,4 @@
     </script>
 </body>
 </html>
+
