@@ -2,7 +2,7 @@
 
 Playable build: https://joenasriani.github.io/kids-kindness-drive/
 
-Kindness Drive is a three-lane browser game built around a direct classification rule: collect named constructive habits and avoid named harmful or unsafe habits.
+Kindness Drive is a three-lane browser game developed as part of a multi-game interactive children’s edutainment activation in the UAE. Its core rule is direct: collect named constructive habits and avoid named harmful or unsafe habits.
 
 ## Game rule
 
@@ -21,9 +21,9 @@ Examples present in the current build include sharing toys, saying please, helpi
 
 The repository demonstrates that interaction structure. It does not contain a controlled study measuring learning, retention, behavior change, or educational effectiveness.
 
-## Deployment context
+## Activation context
 
-This build was used in a children's event setting. The repository remains a standalone browser game after that event deployment.
+This game belongs to the same `kids-*` game set developed for the multi-game interactive children’s edutainment activation in the UAE.
 
 ## Repository scope
 
