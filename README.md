@@ -2,39 +2,35 @@
 
 Playable build: https://joenasriani.github.io/kids-kindness-drive/
 
-Kindness Drive is a lane-based browser game created for a children's event and intended as one game module within a broader educational game direction for kids.
+Kindness Drive is a three-lane browser game built around a direct classification rule: collect named constructive habits and avoid named harmful or unsafe habits.
 
-## What the player does
+## Game rule
 
-The player moves a car between three lanes. Short habit statements approach from the top of the road.
+The player moves a car between three lanes while habit statements travel down the road.
 
-- Collect statements representing constructive habits.
-- Avoid statements representing harmful or unsafe habits.
-- Collecting a constructive habit increases the score.
+- Collecting a constructive habit adds to the score.
 - Missing too many constructive habits ends the run.
-- Hitting a harmful habit ends the run and shows a short explanation tied to that habit.
-- The pace changes as levels advance.
+- Contact with a harmful or unsafe habit ends the run and displays a short explanation linked to that statement.
+- Level progression changes the pace of incoming items.
 
-The current game uses examples such as sharing toys, saying please, helping others, telling the truth, washing hands, wasting food, being rude, and talking to strangers.
+Examples present in the current build include sharing toys, saying please, helping others, telling the truth, washing hands, wasting food, being rude, and talking to strangers.
 
-## Educational structure
-
-The learning mechanism is embedded directly in the game rule:
+## Instructional structure
 
 **habit statement → player decision → immediate game consequence → short reinforcement or explanation**
 
-The repository does not contain a formal learning-outcome study, so no claim is made here that the game has measured educational effectiveness.
+The repository demonstrates that interaction structure. It does not contain a controlled study measuring learning, retention, behavior change, or educational effectiveness.
 
-## Event and product context
+## Deployment context
 
-This build was made for use at a children's event. The event was a deployment context for the game, not the limit of the underlying educational-game concept.
+This build was used in a children's event setting. The repository remains a standalone browser game after that event deployment.
 
-The present repository contains this single playable module. It should not be read as evidence that a complete multi-game platform is implemented in this repository.
+## Repository scope
+
+This repository contains one playable game module. It does not contain a multi-game platform, learner accounts, curriculum tracking, teacher controls, or cross-game progression.
 
 ## Implementation
 
-The current build is contained in a single `index.html` file and runs in the browser using React, ReactDOM, Babel and Tailwind loaded from public CDNs.
+The playable build is contained in `index.html` and uses React, ReactDOM, Babel and Tailwind loaded from public CDNs.
 
-## Preservation note
-
-The game file is kept as the playable artifact. Documentation and discovery files are maintained separately so the game rules, controls, scoring, assets and runtime behavior are not altered by repository-description work.
+`index.html` is the game artifact. The accompanying README, crawl instructions and informational page describe the artifact without changing its rules, controls, scoring, assets or runtime behavior.
